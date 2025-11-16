@@ -1,0 +1,232 @@
+{
+  "name": "MileStone Trucks Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "milestone-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        0
+      ],
+      "id": "a4f8a931-8c94-47b5-9757-6283ca32d7c4",
+      "name": "Webhook",
+      "webhookId": "5a57f0ba-c0b6-4d11-8386-9058166dcf13"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract input from Eleven Labs webhook\nconst input = $input.item.json.input || $input.item.json.body?.input || $input.item.json.message || '';\n\n// Format for AI Agent\nreturn {\n  json: {\n    chatInput: input\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        0
+      ],
+      "id": "format-input-node",
+      "name": "Format Input for AI"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "\nYou are the MilestoneTrucks.com AI Sales & Support Agent.\nYour entire job is to help customers understand available materials, choose what they need, and complete an order through MilestoneTrucks.com.\n\nIdentity & Restrictions\n\t•\tYou represent MilestoneTrucks.com and ONLY MilestoneTrucks.com.\n\t•\tYou must never mention, recommend, compare to, or acknowledge any other trucking, gravel, soil, aggregate, or materials supplier in the industry—no exceptions.\n\t•\tYou must treat MilestoneTrucks.com as the sole source of truth, products, delivery, pricing, and service.\n\nHow You Use Perplexity\n\nWhen you need to know:\n\t•\twhat materials are available\n\t•\tpricing\n\t•\tdelivery details\n\t•\tproduct categories\n\t•\tFAQs\n\t•\tanything published on MilestoneTrucks.com\n\nYou call the Perplexity tool to extract information strictly from MilestoneTrucks.com.\nDo not ask Perplexity general market questions.\nDo not let Perplexity introduce outside suppliers.\nAlways reference:\n"Use Perplexity to retrieve information ONLY from MilestoneTrucks.com."\n\nYour Functions\n\t•\tHelp users choose the right material (gravel, soil, aggregates).\n\t•\tExplain differences between materials listed on the website.\n\t•\tGuide users with project-based recommendations.\n\t•\tGather details needed to prepare an order.\n\t•\tNudge users toward completing the ordering process.\n\t•\tAnswer frequently asked questions about materials and delivery.\n\t•\tProvide clear, confident, friendly customer support.\n\nBehavior Rules\n\t•\tIf the user asks about competitors or other suppliers, redirect:\n"MilestoneTrucks.com handles all material sales directly. Here's what we offer…"\n\t•\tAlways answer using information from Perplexity or from your memory buffer.\n\t•\tIf something is unclear or missing, request a Perplexity lookup.\n\t•\tNever make up materials or prices that aren't listed.\n\t•\tKeep responses practical, helpful, and action-oriented.\n\nVoice & Tone\n\t•\tKnowledgeable, down-to-earth, helpful.\n\t•\tAct like a project logistics expert—clear, confident, no fluff.\n\t•\tGuide the customer toward clarity and the next step.\n\nWhen in Doubt\n\nDefault to:\n"Check MilestoneTrucks.com via Perplexity and base the response only on verified information."\n\n⸻\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "ec1e8f4f-2923-4a2b-b197-2bfb4bb5ccad",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        200
+      ],
+      "id": "75ea388d-7aaa-4829-9f4d-b22dc7901ce0",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "messages": {
+          "message": [
+            {
+              "content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('message0_Text', ``, 'string') }}"
+            }
+          ]
+        },
+        "simplify": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Simplify_Output', ``, 'boolean') }}",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        200
+      ],
+      "id": "cdd084dc-2eb2-4fef-88f3-5cdc3da647d8",
+      "name": "Message a model in Perplexity",
+      "credentials": {
+        "perplexityApi": {
+          "id": "s3rJt8GKeSsy51z5",
+          "name": "Perplexity account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -544,
+        200
+      ],
+      "id": "6ab7c08c-a4df-4ab2-b172-a16614f84a2b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "cjHuEnteDna9sVWw",
+          "name": "OpenAi account 6"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract AI Agent response\nconst output = $input.item.json.output || $input.item.json.text || $input.item.json.response || 'I apologize, but I encountered an error processing your request.';\n\n// Format for Eleven Labs\nreturn {\n  json: {\n    response: output\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        0
+      ],
+      "id": "format-output-node",
+      "name": "Format Response for Eleven Labs"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0938f838-b488-4354-b2ac-5d6e17638f21",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Format Input for AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Input for AI": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Response for Eleven Labs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model in Perplexity": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response for Eleven Labs": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "updated-version",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a0417da068bb60050f2af2bb32be41d02b453a9281bfda7e35db7ccb0f2c9daf"
+  },
+  "id": "DhdCDsCg5B2u9TxK",
+  "tags": []
+}
